@@ -4,6 +4,7 @@ metadata:
   name: elasticsearch
 spec:
   version: 7.15.1
+  serviceAccountName: elastic-operator
   nodeSets:
   - name: default
     count: 1
