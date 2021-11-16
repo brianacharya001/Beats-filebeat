@@ -1,0 +1,1 @@
+oc patch namespace openshift-operators -p '{"metadata": {"annotations": {"openshift.io/node-selector": ""}}}'
