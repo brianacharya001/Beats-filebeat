@@ -1,13 +1,11 @@
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
-  name: elasticsearch
+  name: quickstart
 spec:
   version: 7.15.2
-  nodes:
-  - nodeCount: 1
+  nodeSets:
+  - name: default
+    count: 1
     config:
-      node.master: true
-      node.data: true
-      node.ingest: true
-      action.auto_create_index: ".app-search-*-logs-*,-.app-search-*,+*"
+      node.store.allow_mmap: false
