@@ -1,4 +1,3 @@
-cat <<EOF | kubectl apply -f -
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
@@ -12,4 +11,3 @@ spec:
       node.data: true
       node.ingest: true
       action.auto_create_index: ".app-search-*-logs-*,-.app-search-*,+*"
-EOF
