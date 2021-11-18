@@ -1,0 +1,164 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: packetbeat-config
+  namespace: openshift-operators
+  labels:
+    k8s-app: packetbeat
+    kubernetes.io/cluster-service: "true"
+data:
+  packetbeat.yml: |-
+    setup.dashboards.enabled: true
+    setup.template.enabled: true
+    setup.template.settings:
+      index.number_of_shards: 2
+    packetbeat.interfaces.device: any
+    packetbeat.protocols:
+    - type: dns
+      ports: [53]
+      include_authorities: true
+      include_additionals: true
+    - type: http
+      ports: [80, 8000, 8080, 9200]
+    - type: mysql
+      ports: [3306]
+    - type: redis
+      ports: [6379]
+    packetbeat.flows:
+      timeout: 30s
+      period: 10s
+    processors:
+      - add_cloud_metadata:
+      - add_kubernetes_metadata:
+          host: ${HOSTNAME}
+          indexers:
+          - ip_port:
+          matchers:
+          - field_format:
+              format: '%{[ip]}:%{[port]}'
+    cloud.auth: elastic:${ELASTIC_PASSWORD}
+    cloud.id: ${CLOUD_ID}
+    output.elasticsearch:
+      hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+    setup.kibana:
+      host: ['${kibana_HOST:elasticsearch}:${kibana_PORT:5601}'] 
+      username: ${kibana_USERNAME}
+      password: ${kibana_PASSWORD}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: packetbeat
+  namespace: openshift-operators
+  labels:
+    k8s-app: packetbeat
+spec:
+  selector:
+    matchLabels:
+      k8s-app: packetbeat
+  template:
+    metadata:
+      labels:
+        k8s-app: packetbeat
+    spec:
+      serviceAccountName: packetbeat
+      terminationGracePeriodSeconds: 30
+      hostNetwork: true
+      containers:
+      - name: packetbeat
+        image: docker.elastic.co/beats/packetbeat:7.6.1
+        imagePullPolicy: Always
+        args: [
+          "-c", "/etc/packetbeat.yml",
+          "-e",
+        ]
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          capabilities:
+            add:
+            - NET_ADMIN
+        env:
+        - name: ELASTICSEARCH_HOST
+          value: https://elasticsearch-es-http
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_USERNAME
+          value: elastic
+        - name: ELASTICSEARCH_PASSWORD
+          value: W593BGz92ESrQ0Mu32JfI5y6
+        - name: kibana_HOST
+          value: https://es-kb-http
+        - name: kibana_PORT
+          value: "5601"
+        - name: kibana_USERNAME
+          value: elastic
+        - name: kibana_PASSWORD
+          value: W593BGz92ESrQ0Mu32JfI5y6
+        - name: ELASTIC_CLOUD_ID
+          value:
+        - name: ELASTIC_CLOUD_AUTH
+          value:
+        volumeMounts:
+        - name: config
+          mountPath: /etc/packetbeat.yml
+          readOnly: true
+          subPath: packetbeat.yml
+        - name: data
+          mountPath: /usr/share/packetbeat/data
+        - name: certs 
+          mountPath: /etc/certificate/ca.crt
+          readOnly: true
+          subPath: ca.crt
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0600
+          name: packetbeat-config
+      - name: certs
+        secret: 
+          secretName: es-es-http-certs-public
+      - name: data
+        hostPath:
+          path: /var/lib/packet-data
+          type: DirectoryOrCreate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: packetbeat
+subjects:
+- kind: ServiceAccount
+  name: packetbeat
+  namespace: openshift-operators
+roleRef:
+  kind: ClusterRole
+  name: packetbeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: packetbeat
+  labels:
+    k8s-app: packetbeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: packetbeat
+  namespace: openshift-operators
+  labels:
+    k8s-app: packetbeat
