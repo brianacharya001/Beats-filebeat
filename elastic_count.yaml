@@ -1,0 +1,15 @@
+cat <<EOF | kubectl apply -f -
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+spec:
+  version: 7.15.2
+  nodes:
+  - nodeCount: 1
+    config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+      action.auto_create_index: ".app-search-*-logs-*,-.app-search-*,+*"
+EOF
