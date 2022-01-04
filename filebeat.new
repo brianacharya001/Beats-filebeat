@@ -68,7 +68,7 @@ spec:
       ##  - name: certs 
        ##   mountPath: /etc/certificate/ca.crt
         ##  readOnly: true
-          subPath: ca.crt
+        ##  subPath: ca.crt
     
       volumes:
 
