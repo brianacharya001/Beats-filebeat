@@ -43,10 +43,10 @@ data:
       hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
       username: ${ELASTICSEARCH_USERNAME}
       password: ${ELASTICSEARCH_PASSWORD}
-    setup.kibana:
-      host: ['${kibana_HOST:elasticsearch}:${kibana_PORT:5601}'] 
-      username: ${kibana_USERNAME}
-      password: ${kibana_PASSWORD}
+    ## setup.kibana:
+    ## host: ['${kibana_HOST:elasticsearch}:${kibana_PORT:5601}'] 
+    ##  username: ${kibana_USERNAME}
+    ##  password: ${kibana_PASSWORD}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -90,14 +90,14 @@ spec:
           value: elastic
         - name: ELASTICSEARCH_PASSWORD
           value: W593BGz92ESrQ0Mu32JfI5y6
-        - name: kibana_HOST
-          value: https://es-kb-http
-        - name: kibana_PORT
-          value: "5601"
-        - name: kibana_USERNAME
-          value: elastic
-        - name: kibana_PASSWORD
-          value: W593BGz92ESrQ0Mu32JfI5y6
+       ## - name: kibana_HOST
+       ##  value: https://es-kb-http
+      ##  - name: kibana_PORT
+       ##   value: "5601"
+       ## - name: kibana_USERNAME
+       ##   value: elastic
+      ##  - name: kibana_PASSWORD
+       ##   value: W593BGz92ESrQ0Mu32JfI5y6
         - name: ELASTIC_CLOUD_ID
           value:
         - name: ELASTIC_CLOUD_AUTH
@@ -109,18 +109,18 @@ spec:
           subPath: packetbeat.yml
         - name: data
           mountPath: /usr/share/packetbeat/data
-        - name: certs 
-          mountPath: /etc/certificate/ca.crt
-          readOnly: true
-          subPath: ca.crt
+       ## - name: certs 
+        ##  mountPath: /etc/certificate/ca.crt
+        ##  readOnly: true
+        ##  subPath: ca.crt
       volumes:
       - name: config
         configMap:
           defaultMode: 0600
           name: packetbeat-config
-      - name: certs
-        secret: 
-          secretName: es-es-http-certs-public
+      -## name: certs
+       ## secret: 
+        ##  secretName: es-es-http-certs-public
       - name: data
         hostPath:
           path: /var/lib/packet-data
