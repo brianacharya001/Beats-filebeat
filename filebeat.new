@@ -132,8 +132,8 @@ data:
       hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
       username: ${ELASTICSEARCH_USERNAME}
       password: ${ELASTICSEARCH_PASSWORD}
-      ssl.certificate_authorities:
-        - /etc/certificate/ca.crt
+     ## ssl.certificate_authorities:
+      ##  - /etc/certificate/ca.crt
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
