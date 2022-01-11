@@ -22,7 +22,7 @@ spec:
             exclude:
               - kube-*
             include:
-              - openshift-operators
+              - kube-system
           object-templates:
             - complianceType: musthave
               objectDefinition:
@@ -30,7 +30,7 @@ spec:
                 kind: ConfigMap
                 metadata:
                   name: filebeat-config
-                  namespace: openshift-operators
+                  namespace: kube-system
                   labels:
                   k8s-app: filebeat
                 data:
@@ -105,7 +105,7 @@ spec:
             exclude:
               - kube-*
             include:
-              - openshift-operators
+              - kube-system
           object-templates:
             - complianceType: musthave
               objectDefinition:
@@ -113,7 +113,7 @@ spec:
                 kind: DaemonSet
                 metadata:
                   name: filebeat
-                  namespace: openshift-operators
+                  namespace: kube-system
                   labels:
                     k8s-app: filebeat
                 spec:
@@ -250,7 +250,7 @@ spec:
                 subjects:
                   - kind: ServiceAccount
                     name: elastic-operators
-                    namespace: openshift-operators
+                    namespace: kube-system
                 roleRef:
                   kind: ClusterRole
                   name: filebeat
@@ -261,11 +261,11 @@ spec:
                 kind: RoleBinding
                 metadata:
                   name: filebeat
-                  namespace: openshift-operators
+                  namespace: kube-system
                 subjects:
                   - kind: ServiceAccount
                     name: elastic-operators
-                    namespace: openshift-operators
+                    namespace: kube-system
                 roleRef:
                   kind: Role
                   name: filebeat
@@ -276,11 +276,11 @@ spec:
                 kind: RoleBinding
                 metadata:
                   name: filebeat-kubeadm-config
-                  namespace: openshift-operators
+                  namespace: kube-system
                 subjects:
                   - kind: ServiceAccount
                     name: filebeat
-                    namespace: openshift-operators
+                    namespace: kube-system
                 roleRef:
                   kind: Role
                   name: filebeat-kubeadm-config
@@ -314,7 +314,7 @@ spec:
                 metadata:
                   name: filebeat
                     
-                  namespace: openshift-operators
+                  namespace: kube-system
                   labels:
                     k8s-app: filebeat
                 rules:
@@ -329,7 +329,7 @@ spec:
                 kind: Role
                 metadata:
                   name: filebeat-kubeadm-config
-                  namespace: openshift-operators
+                  namespace: kube-system
                   labels:
                     k8s-app: filebeat
                 rules:
@@ -345,7 +345,7 @@ spec:
                 kind: ServiceAccount
                 metadata:
                   name: elastic-operators
-                  namespace: openshift-operators
+                  namespace: kube-system
                 labels:
                   k8s-app: filebeat
 ---
@@ -373,3 +373,12 @@ spec:
   clusterSelector:
     matchExpressions:
       - {key: environment, operator: In, values: ["dev"]}
+            
+                
+            
+                    
+                
+                
+            
+            
+            
