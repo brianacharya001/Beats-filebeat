@@ -1,83 +1,28 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: policy-configmap-filebeat
+  name: policy-ds
   annotations:
-    policy.open-cluster-management.io/standards: NIST-CSF
+    policy.open-cluster-management.io/standards: NIST 800-53
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
 spec:
-  remediationAction: enforce
+  remediationAction: inform
   disabled: false
   policy-templates:
     - objectDefinition:
-      apiVersion: policy.open-cluster-management.io/v1
-      kind: ConfigurationPolicy
-      metadata:
-        name: filebeat-policy-ns
-      spec:
-        remediationAction: inform
-        severity: high
-        object-templates:
-          - complianceType: musthave
-            objectDefinition:
-              apiVersion: v1
-              kind: Namespace
-              metadata:
-                name: kube-system
-    - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: policy-configmap-properties-filebeat
-        spec:
-          remediationAction: enforce
-          severity: low
-          namespaceSelector:
-            include:
-              - kube-system
-          object-templates:
-            - complianceType: musthave
-              objectDefinition:
-                apiVersion: v1
-                kind: ConfigMap
-                metadata:
-                  name: filebeat-config
-                  namespace: kube-system
-                  labels:
-                  k8s-app: filebeat
-                data:
-                  filebeat.yml: |-
-                    filebeat.inputs:
-                    - type: container
-                      paths:
-                        - /var/log/containers/*.log
-                      processors:
-                        - add_kubernetes_metadata:
-                            host: ${NODE_NAME}
-                            matchers:
-                            - logs_path:
-                                logs_path: "/var/log/containers/"
-                    processors:
-                      - add_cloud_metadata:
-                      - add_host_metadata:
-                    cloud.id: ${ELASTIC_CLOUD_ID}
-                    cloud.auth: ${ELASTIC_CLOUD_AUTH}
-                    output.elasticsearch:
-                      hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
-                      username: ${ELASTICSEARCH_USERNAME}
-                      password: ${ELASTICSEARCH_PASSWORD}
-    - objectDefinition:
-        apiVersion: policy.open-cluster-management.io/v1
-        kind: ConfigurationPolicy
-        metadata:
-          name: policy-filebeat-ds
+          name: policy-filebeat-deployment
         spec:
           remediationAction: inform
           severity: low
           namespaceSelector:
+            exclude:
+              - kube-*
             include:
-              - kube-system
+              - default
           object-templates:
             - complianceType: musthave
               objectDefinition:
@@ -164,25 +109,25 @@ spec:
                         - name: data
                           hostPath:
                             path: /var/lib/filebeat-data
-                            type: DirectoryOrCreate      
+                            type: DirectoryOrCreate
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: binding-configmap-filebeat
+  name: binding-policy-deployment
 placementRef:
-  name: placement-configmap-filebeat
+  name: placement-policy-deployment
   kind: PlacementRule
   apiGroup: apps.open-cluster-management.io
 subjects:
-- name: policy-configmap-filebeat
+- name: policy-ds
   kind: Policy
   apiGroup: policy.open-cluster-management.io
 ---
 apiVersion: apps.open-cluster-management.io/v1
 kind: PlacementRule
 metadata:
-  name: placement-configmap-filebeat
+  name: placement-policy-deployment
 spec:
   clusterConditions:
   - status: "True"
@@ -190,4 +135,3 @@ spec:
   clusterSelector:
     matchExpressions:
       - {key: environment, operator: In, values: ["dev"]}
-
