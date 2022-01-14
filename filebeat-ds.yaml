@@ -1,22 +1,22 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: policy-configmap-filebeat
+  name: policy-ds
   annotations:
-    policy.open-cluster-management.io/standards: NIST-CSF
+    policy.open-cluster-management.io/standards: NIST 800-53
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
 spec:
-  remediationAction: enforce
+  remediationAction: inform
   disabled: false
   policy-templates:
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: policy-configmap-properties-filebeat
+          name: policy-filebeat-ds
         spec:
-          remediationAction: enforce
+          remediationAction: inform
           severity: low
           namespaceSelector:
             exclude:
@@ -26,52 +26,108 @@ spec:
           object-templates:
             - complianceType: musthave
               objectDefinition:
-                apiVersion: v1
-                kind: ConfigMap
+                apiVersion: apps/v1
+                kind: DaemonSet
                 metadata:
-                  name: filebeat-config
+                  name: filebeat
                   namespace: kube-system
                   labels:
-                  k8s-app: filebeat
-                data:
-                  filebeat.yml: |-
-                    filebeat.inputs:
-                    - type: container
-                      paths:
-                        - /var/log/containers/*.log
-                      processors:
-                        - add_kubernetes_metadata:
-                            host: ${NODE_NAME}
-                            matchers:
-                            - logs_path:
-                                logs_path: "/var/log/containers/"
-                    processors:
-                      - add_cloud_metadata:
-                      - add_host_metadata:
-                    cloud.id: ${ELASTIC_CLOUD_ID}
-                    cloud.auth: ${ELASTIC_CLOUD_AUTH}
-                    output.elasticsearch:
-                      hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
-                      username: ${ELASTICSEARCH_USERNAME}
-                      password: ${ELASTICSEARCH_PASSWORD}
+                    k8s-app: filebeat
+                spec:
+                  selector:
+                    matchLabels:
+                      k8s-app: filebeat
+                  template:
+                    metadata:
+                      labels:
+                        k8s-app: filebeat
+                    spec:
+                      serviceAccountName: elastic-operators
+                      terminationGracePeriodSeconds: 30
+                      hostNetwork: true
+                      dnsPolicy: ClusterFirstWithHostNet
+                      containers:
+                      - name: filebeat
+                        image: docker.elastic.co/beats/filebeat:7.15.1
+                        args: [
+                          "-c", "/etc/filebeat.yml",
+                          "-e",
+                        ]
+                        env:
+                        - name: ELASTICSEARCH_HOST
+                          value: https://elasticsearch-es-http
+                        - name: ELASTICSEARCH_PORT
+                          value: "9200"
+                        - name: ELASTICSEARCH_USERNAME
+                          value: elastic
+                        - name: ELASTICSEARCH_PASSWORD
+                          value: 28LCW6208UIa898HDgbgaJO0
+                        - name: ELASTIC_CLOUD_ID
+                          value:
+                        - name: ELASTIC_CLOUD_AUTH
+                          value:
+                        - name: NODE_NAME
+                          valueFrom:
+                            fieldRef:
+                              fieldPath: spec.nodeName
+        
+        
+                        securityContext:
+                          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true
+                        resources:
+                          limits:
+                            memory: 200Mi
+                          requests:
+                            cpu: 100m
+                            memory: 100Mi
+                        volumeMounts:
+                        - name: config
+                          mountPath: /etc/filebeat.yml
+                          readOnly: true
+                          subPath: filebeat.yml
+                        - name: data
+                          mountPath: /usr/share/filebeat/data
+                        - name: varlibdockercontainers
+                          mountPath: /var/lib/docker/containers
+                          readOnly: true
+                        - name: varlog
+                          mountPath: /var/log
+                          readOnly: true
+                        volumes:
+                        - name: config
+                          configMap:
+                            defaultMode: 0640
+                            name: filebeat-config
+                        - name: varlibdockercontainers
+                          hostPath:
+                            path: /var/lib/docker/containers
+                        - name: varlog
+                          hostPath:
+                            path: /var/log
+                        - name: data
+                          hostPath:
+                            path: /var/lib/filebeat-data
+                            type: DirectoryOrCreate
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: binding-configmap-filebeat
+  name: binding-policy-ds
 placementRef:
-  name: placement-configmap-filebeat
+  name: placement-policy-ds
   kind: PlacementRule
   apiGroup: apps.open-cluster-management.io
 subjects:
-- name: policy-configmap-filebeat
+- name: policy-ds
   kind: Policy
   apiGroup: policy.open-cluster-management.io
 ---
 apiVersion: apps.open-cluster-management.io/v1
 kind: PlacementRule
 metadata:
-  name: placement-configmap-filebeat
+  name: placement-policy-ds
 spec:
   clusterConditions:
   - status: "True"
