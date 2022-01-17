@@ -22,7 +22,7 @@ spec:
             ## exclude:
             ##  - kube-*
             ## include:
-              - default
+              ## - default
           object-templates:
             - complianceType: musthave
               objectDefinition:
