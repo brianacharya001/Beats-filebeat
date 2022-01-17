@@ -30,7 +30,7 @@ spec:
                 kind: DaemonSet
                 metadata:
                   name: filebeat
-                  namespace: kube-system
+                  ## namespace: kube-system
                   labels:
                     k8s-app: filebeat
                 spec:
