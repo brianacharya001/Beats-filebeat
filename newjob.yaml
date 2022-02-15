@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-job-noobaa
+  namespace: demo-ocs-workloads
+  labels:
+    app: demo-job-noobaa
+spec:
+  template:
+    metadata:
+      labels:
+        app: demo-job-noobaa
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - image: mesosphere/aws-cli:latest
+          command: ["sh"]
+          args: 
+            - '-c'
+            - 'set -x && s3cmd --no-check-certificate --host $BUCKET_HOST:$BUCKET_PORT --host-bucket $BUCKET_HOST:$BUCKET_PORT du'
+          name: demo-job-noobaa
+          env:
+            - name: BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-obc-noobaa
+                  key: BUCKET_NAME
+            - name: BUCKET_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-obc-noobaa
+                  key: BUCKET_HOST
+            - name: BUCKET_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-obc-noobaa
+                  key: BUCKET_PORT
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-obc-noobaa
+                  key: BUCKET_REGION
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: demo-obc-noobaa
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: demo-obc-noobaa
+                  key: AWS_SECRET_ACCESS_KEY
